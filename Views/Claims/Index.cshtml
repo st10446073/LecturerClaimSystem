@@ -1,0 +1,83 @@
+@model IEnumerable<LecturerClaimSystem.Models.Claim>
+@{
+    ViewData["Title"] = "Submitted Claims";
+    bool isVerifier = ViewBag.IsVerifier ?? false;
+}
+
+<h2>Submitted Claims</h2>
+
+<table class="table table-bordered" id="claimsTable">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Lecturer</th>
+            <th>Hours</th>
+            <th>Rate</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Document</th>
+            @if (isVerifier)
+            {
+                <th>Actions</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
+            <tr data-id="@claim.Id">
+                <td>@claim.Id</td>
+                <td>@claim.LecturerName</td>
+                <td>@claim.HoursWorked</td>
+                <td>@claim.HourlyRate</td>
+                <td class="status">@claim.Status</td>
+                <td>@claim.DateSubmitted.ToShortDateString()</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(claim.DocumentPath))
+                    {
+                        <a href="@claim.DocumentPath" target="_blank">View</a>
+                    }
+                </td>
+                @if (isVerifier)
+                {
+                    <td>
+                        <button class="btn btn-success btn-sm approve">Approve</button>
+                        <button class="btn btn-danger btn-sm reject">Reject</button>
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+<script>
+    $(document).ready(function () {
+        // Approve claim
+        $('#claimsTable').on('click', '.approve', function () {
+            var row = $(this).closest('tr');
+            var id = row.data('id');
+            $.post('/Claims/ApproveAjax', { id: id }, function (res) {
+                if (res.success) {
+                    row.find('.status').text(res.status);
+                } else {
+                    alert('Failed to approve claim.');
+                }
+            });
+        });
+
+        // Reject claim
+        $('#claimsTable').on('click', '.reject', function () {
+            var row = $(this).closest('tr');
+            var id = row.data('id');
+            $.post('/Claims/RejectAjax', { id: id }, function (res) {
+                if (res.success) {
+                    row.find('.status').text(res.status);
+                } else {
+                    alert('Failed to reject claim.');
+                }
+            });
+        });
+    });
+</script>
+}

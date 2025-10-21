@@ -1,0 +1,120 @@
+@model IEnumerable<LecturerClaimSystem.Models.Claim>
+
+@{
+    ViewData["Title"] = "Verify Claims";
+}
+
+<h2>Pending Claims for Verification</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No pending claims available.</div>
+}
+else
+{
+    <table class="table table-bordered table-striped" id="verifyTable">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Lecturer</th>
+                <th>Hours Worked</th>
+                <th>Rate</th>
+                <th>Status</th>
+                <th>Date Submitted</th>
+                <th>Document</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var claim in Model)
+            {
+                <tr data-id="@claim.Id">
+                    <td>@claim.Id</td>
+                    <td>@claim.LecturerName</td>
+                    <td>@claim.HoursWorked</td>
+                    <td>@claim.HourlyRate.ToString("C")</td>
+                    <td class="status">@claim.Status</td>
+                    <td>@claim.DateSubmitted.ToShortDateString()</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(claim.DocumentPath))
+                        {
+                            <a href="@claim.DocumentPath" target="_blank" class="btn btn-link">View</a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No file</span>
+                        }
+                    </td>
+                    <td>
+                        @if (claim.Status == "Pending")
+                        {
+                            <button class="btn btn-success btn-sm approve">Approve</button>
+                            <button class="btn btn-danger btn-sm reject">Reject</button>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">@claim.Status</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+
+            // Approve claim
+            $('#verifyTable').on('click', '.approve', function(){
+                var row = $(this).closest('tr');
+                var id = row.data('id');
+
+                $.ajax({
+                    url: '/Claims/ApproveAjax',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function(res){
+                        if(res.success){
+                            row.find('.status').text(res.status);
+                            row.find('.approve, .reject').prop('disabled', true);
+                            alert("Claim approved successfully!");
+                        } else {
+                            alert("Failed to approve claim.");
+                        }
+                    },
+                    error: function(){
+                        alert("Error: You may not have permission to perform this action.");
+                    }
+                });
+            });
+
+            // Reject claim
+            $('#verifyTable').on('click', '.reject', function(){
+                var row = $(this).closest('tr');
+                var id = row.data('id');
+
+                $.ajax({
+                    url: '/Claims/RejectAjax',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function(res){
+                        if(res.success){
+                            row.find('.status').text(res.status);
+                            row.find('.approve, .reject').prop('disabled', true);
+                            alert("Claim rejected successfully!");
+                        } else {
+                            alert("Failed to reject claim.");
+                        }
+                    },
+                    error: function(){
+                        alert("Error: You may not have permission to perform this action.");
+                    }
+                });
+            });
+
+        });
+    </script>
+}
